@@ -1,0 +1,17 @@
+{
+  "name": "fire1/speedy",
+  "description": "Speedy wrapper class",
+  "minimum-stability": "dev",
+  "license": "GPL3",
+  "authors": [
+    {
+      "name": "Angel Zaprianov",
+      "email": "fire1@abv.bg"
+    }
+  ],
+  "autoload": {
+    "psr-0": {
+      "Fire1/Speedy": "src/Speedy/"
+    }
+  }
+}

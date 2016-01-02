@@ -1,6 +1,12 @@
 {
   "name": "fire1/speedy",
   "description": "Speedy wrapper class",
+  "type": "library",
+  "keywords": [
+    "silex",
+    "shipping speedy"
+  ],
+  "homepage": "https://github.com/fire1/speedy",
   "minimum-stability": "dev",
   "license": "GPL3",
   "authors": [
@@ -13,5 +19,9 @@
     "psr-0": {
       "Fire1/Speedy": "src/Speedy/"
     }
+  },
+  "require": {
+    "php": ">=5.4.0",
+    "silex/silex": "~1.0"
   }
 }

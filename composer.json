@@ -17,7 +17,7 @@
   ],
   "autoload": {
     "psr-0": {
-      "Fire1/Speedy": "src/Speedy/"
+      "Fire1\\Speedy": "src/Speedy/"
     }
   },
   "require": {

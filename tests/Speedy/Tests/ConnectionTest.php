@@ -6,7 +6,7 @@
  * Time: 2:47 PM
  */
 
-namespace Speedy\Test;
+namespace Fire1\Speedy\Test;
 
 
 use Speedy\ConnectionSpeedyApi;

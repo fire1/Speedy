@@ -31,6 +31,10 @@ namespace Fire1\Speedy;
 class ConnectionSpeedyApi
 {
     /**
+     * @var string  ../../../
+     */
+    protected static $lib_path = __DIR__ . '/../../../';
+    /**
      * Speedy remote source
      */
     const SERVER = 'https://www.speedy.bg/eps/main01.wsdl';
@@ -61,7 +65,7 @@ class ConnectionSpeedyApi
      */
     public function __construct(ConnectionInterface $conn)
     {
-        self::init();
+        self::includeApis();
         $this->connInfo = $conn;
         try {
             $this->setEpsFacade();
@@ -71,22 +75,41 @@ class ConnectionSpeedyApi
         }
     }
 
-
-    private static function init()
+    /** Sets new path to Speedy EPS lib
+     * @param $path
+     */
+    public static function setLibPath($path)
     {
+        static::$lib_path = $path;
+    }
+
+    /** Gets Speedy EPS lib
+     * @return string
+     */
+    public static function getLibIncludePath()
+    {
+        return realpath(static::$lib_path);
+    }
+
+    private static function includeApis()
+    {
+        $dir = self::getLibIncludePath();
         //
         // Adding main dependency classes
         //  Note: include only once!
-        require_once(__DIR__ . '/lib/speedy-eps-lib/util/Util.class.php');
-        require_once(__DIR__ . '/lib/speedy-eps-lib/ver01/EPSFacade.class.php');
-        require_once(__DIR__ . '/lib/speedy-eps-lib/ver01/soap/EPSSOAPInterfaceImpl.class.php');
+        require_once($dir . '/lib/speedy-eps-lib/util/Util.class.php');
+        require_once($dir . '/lib/speedy-eps-lib/ver01/EPSFacade.class.php');
+        require_once($dir . '/lib/speedy-eps-lib/ver01/soap/EPSSOAPInterfaceImpl.class.php');
+
+        require_once($dir . '/lib/speedy-eps-lib/ver01/ParamCalculation.class.php');
+        require_once($dir . '/lib/speedy-eps-lib/ver01/ParamFilterSite.class.php');
 
         //
         // Check for missing required classes
         if (!class_exists('ResultSite'))
-            require_once(__DIR__ . '/lib/speedy-eps-lib/ver01/ResultSite.class.php');
+            require_once($dir . '/lib/speedy-eps-lib/ver01/ResultSite.class.php');
         if (!class_exists('AddrNomen'))
-            require_once(__DIR__ . '/lib/speedy-eps-lib/ver01/AddrNomen.class.php');
+            require_once($dir . '/lib/speedy-eps-lib/ver01/AddrNomen.class.php');
     }
 
 

@@ -23,6 +23,7 @@
 */
 
 namespace Fire1\Speedy;
+
 use Monolog\Logger;
 
 /**

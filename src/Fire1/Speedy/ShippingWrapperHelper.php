@@ -76,12 +76,14 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      */
     protected $working_days = 0;
 
+    /**
+     * @param \EPSFacade $eps_facade
+     * @param ConnectionSpeedyApi $cApi
+     */
     public function __construct(\EPSFacade $eps_facade, ConnectionSpeedyApi $cApi)
     {
         $this->conApi = $cApi;
         $this->eps = $eps_facade;
-        require_once((__DIR__) . '/lib/speedy-eps-lib/ver01/ParamCalculation.class.php');
-        require_once((__DIR__) . '/lib/speedy-eps-lib/ver01/ParamFilterSite.class.php');
     }
 
     /**

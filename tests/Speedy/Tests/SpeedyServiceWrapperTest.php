@@ -6,7 +6,7 @@
  * Time: 10:04 AM
  */
 
-namespace Speedy\Test;
+namespace Fire1\Speedy\Test;
 
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;

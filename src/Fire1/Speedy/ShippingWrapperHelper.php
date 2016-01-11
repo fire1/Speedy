@@ -38,10 +38,16 @@ namespace Fire1\Speedy;
  */
 class ShippingWrapperHelper implements ShippingWrapperInterface
 {
-
+    /** Error info
+     * @var null
+     */
+    public $error = null;
+    /** Error status
+     * @var bool
+     */
     protected $_error = false;
     /**
-     * @var int
+     * @var int 0
      */
     protected $package_count = 0;
     /**
@@ -405,7 +411,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      * @param array $address
      * @return \ParamAddress
      */
-    public function setReceiverAddress($address = array(), $arrCustomKeys = array())
+    public function setReceiverAddress(array $address = array(), $arrCustomKeys = array())
     {
         if (is_array($arrCustomKeys) && !empty($arrCustomKeys)) {
             $address = $this->getReloadedAddressArray($address, $arrCustomKeys);
@@ -429,8 +435,9 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         //
         // Взимане на улицата от тъпотията на Спиди ....
         $speedyStr = $this->getStreets($address['str_nm'], $speedyCty['id'])[0]; // ->listSitesEx
-        // dump($speedyStr);
 
+        //
+        // Push to speedy object
         return $this->setSpeedyParamAddresses($siteId, $speedyCty, $speedyStr, $address);
     }
 
@@ -608,6 +615,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      */
     public function getCalculation($total = 0)
     {
+//        dump($this->package_count < 1 || $this->_error);
         if ($this->package_count < 1 || $this->_error) {
             return -1;
         }
@@ -624,6 +632,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
             // Todo Save result into session and pass it to billing
             return $result->getAmounts()->getTotal();
         } catch (\Exception $e) {
+            $this->error = $e->getMessage();
             return -1;
         }
 
@@ -642,6 +651,11 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
     public function setErrorTrue()
     {
         $this->_error = true;
+    }
+
+    public function getErrorInfo()
+    {
+        return $this->error;
     }
 
 }

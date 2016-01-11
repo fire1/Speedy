@@ -31,7 +31,7 @@ namespace Fire1\Speedy;
 class ReceiverStreetModel implements \ArrayAccess
 {
 
-    /**
+    /** Array model required from "setReceiverAddress" method
      * @var array
      */
     protected $arrModel = array(

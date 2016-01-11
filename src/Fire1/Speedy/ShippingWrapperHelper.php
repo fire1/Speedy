@@ -380,6 +380,16 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
 
     }
 
+    /** Reloads address array
+     * @param $input
+     * @param $model
+     * @return ReceiverStreetModel
+     */
+    protected function getReloadedAddressArray($input, $model)
+    {
+        return new ReceiverStreetModel($input, $model);
+    }
+
     /** Sets Receiver address
      *
      * array['city']        City name
@@ -395,8 +405,12 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      * @param array $address
      * @return \ParamAddress
      */
-    public function setReceiverAddress(array $address = array())
+    public function setReceiverAddress($address = array(), $arrCustomKeys = array())
     {
+        if (is_array($arrCustomKeys) && !empty($arrCustomKeys)) {
+            $address = $this->getReloadedAddressArray($address, $arrCustomKeys);
+        }
+
         $this->initReceiverAndSender();
         //
         // Това е само проба да се вземе тъпия "SiteID"
@@ -417,7 +431,18 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         $speedyStr = $this->getStreets($address['str_nm'], $speedyCty['id'])[0]; // ->listSitesEx
         // dump($speedyStr);
 
+        return $this->setSpeedyParamAddresses($siteId, $speedyCty, $speedyStr, $address);
+    }
 
+    /** Sets collected data to speedy address param
+     * @param $siteId
+     * @param $speedyCty
+     * @param $speedyStr
+     * @param $address
+     * @return \ParamAddress
+     */
+    protected function setSpeedyParamAddresses($siteId, $speedyCty, $speedyStr, $address)
+    {
         $this->_address = new \ParamAddress();
         //
         // ТОТАЛИТАРНО ЗАДАВАНЕ НА ID
@@ -444,6 +469,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         $this->_address->setAddressNote($address['note']);
         return $this->_address;
     }
+
 
     /** Sets Receiver date
      * @param string $realName

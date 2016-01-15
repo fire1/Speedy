@@ -399,7 +399,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      */
     protected function getReloadedAddressArray(array $input, array $model = array())
     {
-        if ($input instanceof ReceiverStreetModel) {
+        if ($input instanceof ReceiverStreetModel || is_subclass_of($input, 'ReceiverStreetModel')) {
             return $input->getContainer();
         }
 

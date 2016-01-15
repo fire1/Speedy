@@ -34,4 +34,20 @@
      * array['note']        Address Note
      */
      
+## Въвеждане на адрес на получател вариант 2
+		//
+		// With set parameter $arrModel for method,  will reload $arrPost in given format 
+		//
+		// $arrPost 	- Array from form inputs,selects, textarea & etc ....
+		// $arrModel	- Associative Array model for keys. Array keys are acceptable from method.
+		// Example: $arrModel =  array('city'=>'city_name','str_tp'=>'street_type','str_nm'=>'street')
+		// As folow: 'street_name' is your <input name="street_name" ... 
+		$shipping->setReceiverAddress(  $arrPost /* [array from request] ($_POST) */, $arrModel /* array model  */);
+
+## Въвеждане на адрес на получател вариант 3
+		//
+		//  Този вариант (3) е подобен на 2 с разликата, че информацията се обработва преди метода
+		$formData = new ReceiverStreetModel($input, $model); 
+     		$shipping->setReceiverAddress($formData);
+     		
 ### Следва още ...

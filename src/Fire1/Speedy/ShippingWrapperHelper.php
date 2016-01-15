@@ -651,6 +651,9 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
     public function getCalculation($total = 0)
     {
         // dump($this->package_count < 1 || $this->_error);
+
+        //
+        // Todo Save result into session and pass it to billing
         if ($this->package_count < 1 || $this->_error) {
             return -1;
         }
@@ -663,17 +666,33 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         //
         // Make calculation
         try {
-            //
-            // Todo Save result into session and pass it to billing
-            return $this->eps->calculatePicking($this->_picking)->getAmounts();
             // Uncomment for shipping price only
             // return $result->getAmounts()->getTotal();
+            return $this->getReformatedResult($this->eps->calculatePicking($this->_picking));
         } catch (\Exception $e) {
             //
             // Record message in error string
             $this->error = $e->getMessage();
             return -1;
         }
+    }
+
+    /** Remove unwanted prefix key
+     * @param $prefix
+     * @param ResultAmounts $container
+     * @return array
+     */
+    protected function getReformatedResult(\ResultCalculation $container)
+    {
+        $amount = $container->getAmounts();
+        return array(
+            'net_cost' => $amount->getNet(),
+            'vat_cost' => $amount->getVat(),
+            'insurance' => $amount->getInsuranceBase(),
+            'total' => $amount->getTotal(),
+            'traking_date' => $container->getTakingDate(), // 2016-01-16T00:00:00+02:00
+            'shipping_end' => $container->getDeadlineDelivery() // 2016-01-18T19:00:00+02:00
+        );
     }
 
     public function setBilling()

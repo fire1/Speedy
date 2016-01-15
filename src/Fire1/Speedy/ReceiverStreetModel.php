@@ -31,7 +31,7 @@ namespace Fire1\Speedy;
 class ReceiverStreetModel implements \ArrayAccess
 {
 
-    /**
+    /** Array model required from "setReceiverAddress" method
      * @var array
      */
     protected $arrModel = array(
@@ -44,11 +44,6 @@ class ReceiverStreetModel implements \ArrayAccess
         'ent_no',
         'note',
     );
-
-    /**
-     * @var array
-     */
-    protected static $customModel = array();
 
     /**
      * @var array
@@ -83,6 +78,8 @@ class ReceiverStreetModel implements \ArrayAccess
      *
      * array['city']        => city_name
      * array['zip']         => city_code
+     * array['qtr_tp']      => quarter_type
+     * array['qtr_nm']      => quarter_name
      * array['str_tp']      => street_type
      * array['str_nm']      => street_name
      * array['str_no']      => street_number
@@ -98,6 +95,14 @@ class ReceiverStreetModel implements \ArrayAccess
         foreach ($arrCustomKeys as $k => $v):
             $this->container[$k] = $inputStreet[$v];
         endforeach;
+    }
+
+    /** Gets input data array
+     * @return array
+     */
+    public function getContainer()
+    {
+        return $this->container;
     }
 
     /**

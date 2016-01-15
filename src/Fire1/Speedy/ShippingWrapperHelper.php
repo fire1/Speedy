@@ -32,7 +32,7 @@ namespace Fire1\Speedy;
  *
  * @data 24 Dec 2015
  * @see https://www.speedy.bg/eps/docs/eps-lib-php.html#ahn-h-02
- * @version 0.3
+ * @version 0.4
  * @author <me@fire1.eu> Angel Zaprianov
  * @package Speedy
  */

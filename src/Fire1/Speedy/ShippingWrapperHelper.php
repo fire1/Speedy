@@ -82,6 +82,12 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      */
     protected $working_days = 0;
 
+    /** Detect fragile for Insurance
+     * @var array
+     */
+    protected $_fragile = array();
+
+
     /**
      * @param \EPSFacade $eps_facade
      * @param ConnectionSpeedyApi $cApi
@@ -455,10 +461,8 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
     protected function setSpeedyParamAddresses($siteId, $speedyCty, $speedyStr, $address)
     {
         $this->_address = new \ParamAddress();
-        //
-        // ТОТАЛИТАРНО ЗАДАВАНЕ НА ID
-        // То е невъзможно да се направи един селект на градове и да са винаги коректна стойност за Спиди
-        // Но нека да изпишем 5km код да направих работата по-сложна за да работим с ID-та ...
+
+        // Разобличаване на дестинацията
         $this->_address->setSiteId(empty($siteId) ? $speedyCty['id'] : $siteId);
         //
         // Квартал (ползвам го като не задължителен)
@@ -467,8 +471,8 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         $this->_address->setQuarterId(empty($siteId) ? $speedyCty['id'] : $siteId);
         //
         // Задаване на улицата
-        $this->_address->setStreetId($speedyStr['id']);         // Много е трудно да се даде точната улица и затова ID
-        $this->_address->setStreetName($speedyStr['value']);    // Ама да напъхаме все пак нашата улица
+        $this->_address->setStreetId($speedyStr['id']);
+        $this->_address->setStreetName($speedyStr['value']);
         $this->_address->setStreetNo($address['str_no']);
         $this->_address->setStreetType($address['str_tp']);
         //
@@ -481,6 +485,13 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         return $this->_address;
     }
 
+    /**
+     * @param bool|false $isFragile
+     */
+    protected function setFrigile($isFragile = false)
+    {
+        $this->_fragile[] = $isFragile;
+    }
 
     /** Sets Receiver date
      * @param string $realName
@@ -527,12 +538,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         $this->_picking->setDocuments(false);
         $this->_picking->setPalletized(false);
         $this->_picking->setFragile($fragile);
-
-        //
-        // TODO Must handle Insurance as seperated option
-        $this->_picking->setAmountInsuranceBase(20);
-        $this->_picking->setPayerTypeInsurance(0);
-
+        $this->setFrigile($fragile);
 
         $size = new \Size();
         $size->setDepth($depth);
@@ -598,6 +604,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         $this->_picking->setTakingDate($this->getTomorrowStamp());
     }
 
+
     /**
      * @return \date
      */
@@ -606,12 +613,30 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         return mktime(0, 0, 0, date('n'), date('j') + 1);
     }
 
-    /** Sets Amount total of delivery pack
-     * @param $total
-     *
+    /** Detect is insurance required
+     * @return bool
      */
-    protected function setShippingPackTotal($total)
+    protected function isInsuranceRequired()
     {
+        if (in_array(true, $this->_fragile)) {
+            return true;
+        }
+        return false;
+    }
+
+
+    /** Sets Amount total of delivery pack with insurance
+     * @param int $total Set item total cost
+     * @param int $insurance_type Set insurance payer type (0=sender, 1=reciever or 2=third party)
+     */
+    protected function setShippingPackTotal($total, $insurance_type = 0)
+    {
+
+        if ($this->isInsuranceRequired()) {
+            $this->_picking->setAmountInsuranceBase($total);
+            $this->_picking->setPayerTypeInsurance(0);
+        }
+
         if ($total) {
             $this->_picking->setAmountCodBase($total);
         } else {
@@ -625,10 +650,11 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      */
     public function getCalculation($total = 0)
     {
-//        dump($this->package_count < 1 || $this->_error);
+        // dump($this->package_count < 1 || $this->_error);
         if ($this->package_count < 1 || $this->_error) {
             return -1;
         }
+
         //
         // Prepare final data
         $this->setShippingPackTotal($total);
@@ -637,15 +663,17 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         //
         // Make calculation
         try {
-            $result = $this->eps->calculatePicking($this->_picking);
             //
             // Todo Save result into session and pass it to billing
-            return $result->getAmounts()->getTotal();
+            return $this->eps->calculatePicking($this->_picking)->getAmounts();
+            // Uncomment for shipping price only
+            // return $result->getAmounts()->getTotal();
         } catch (\Exception $e) {
+            //
+            // Record message in error string
             $this->error = $e->getMessage();
             return -1;
         }
-
     }
 
     public function setBilling()

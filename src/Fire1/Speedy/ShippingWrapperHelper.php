@@ -387,14 +387,19 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
     }
 
     /** Reloads address array
-     * @param $input
-     * @param $model
-     * @return ReceiverStreetModel
+     * @param array $input
+     * @param array $model
+     * @return array
      */
-    protected function getReloadedAddressArray($input, $model)
+    protected function getReloadedAddressArray(array $input, array $model = array())
     {
-        return new ReceiverStreetModel($input, $model);
+        if ($input instanceof ReceiverStreetModel) {
+            return $input->getContainer();
+        }
+
+        return (new ReceiverStreetModel($input, $model))->getContainer();
     }
+
 
     /** Sets Receiver address
      *
@@ -413,9 +418,8 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      */
     public function setReceiverAddress(array $address = array(), $arrCustomKeys = array())
     {
-        if (is_array($arrCustomKeys) && !empty($arrCustomKeys)) {
-            $address = $this->getReloadedAddressArray($address, $arrCustomKeys);
-        }
+
+        $address = $this->getReloadedAddressArray($address, $arrCustomKeys);
 
         $this->initReceiverAndSender();
         //
@@ -486,7 +490,6 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      */
     public function setReceiverData($realName, $phone, $email)
     {
-
         $this->_receiver->setAddress($this->_address);
         $this->_receiver->setPartnerName($realName); // realName
         $this->_receiver->setPhones($this->getPhones($phone));
@@ -524,6 +527,13 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         $this->_picking->setDocuments(false);
         $this->_picking->setPalletized(false);
         $this->_picking->setFragile($fragile);
+
+        //
+        // TODO Must handle Insurance as seperated option
+        $this->_picking->setAmountInsuranceBase(20);
+        $this->_picking->setPayerTypeInsurance(0);
+
+
         $size = new \Size();
         $size->setDepth($depth);
         $size->setHeight($height);

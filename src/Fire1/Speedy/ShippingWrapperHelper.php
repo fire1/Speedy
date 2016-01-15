@@ -690,7 +690,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
             'vat_cost' => $amount->getVat(),
             'insurance' => $amount->getInsuranceBase(),
             'total' => $amount->getTotal(),
-            'traking_date' => $container->getTakingDate(), // 2016-01-16T00:00:00+02:00
+            'tracing_date' => $container->getTakingDate(), // 2016-01-16T00:00:00+02:00
             'shipping_end' => $container->getDeadlineDelivery() // 2016-01-18T19:00:00+02:00
         );
     }

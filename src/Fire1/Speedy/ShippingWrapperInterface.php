@@ -96,5 +96,9 @@ interface ShippingWrapperInterface
      */
     public function getCalculation($total = 0);
 
+    /** Sets payer type (0=sender, 1=receiver or 2=third party)
+     * @param $intType
+     */
+    public function setPayerType($intType);
 
 }

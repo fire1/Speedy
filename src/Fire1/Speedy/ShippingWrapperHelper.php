@@ -32,7 +32,7 @@ namespace Fire1\Speedy;
  *
  * @data 24 Dec 2015
  * @see https://www.speedy.bg/eps/docs/eps-lib-php.html#ahn-h-02
- * @version 0.4
+ * @version 0.5
  * @author <me@fire1.eu> Angel Zaprianov
  * @package Speedy
  */
@@ -58,6 +58,12 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      * @var \ParamClientData
      */
     protected $_receiver;
+
+    /**
+     * @var \ResultClientData
+     */
+    protected $_client;
+
     /**
      * @var \ParamPicking
      */
@@ -66,8 +72,10 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      * @var \ParamClientData
      */
     protected $_sender;
-
-    protected $addEx;
+    /**
+     * @var integer
+     */
+    protected $payer_type = 1;
     /**
      * @var \EPSFacade
      */
@@ -96,6 +104,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
     {
         $this->conApi = $cApi;
         $this->eps = $eps_facade;
+        $this->initReceiverAndSender();
     }
 
     /**
@@ -114,6 +123,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
     {
         $this->_picking = new \ParamPicking();
         $this->_receiver = new \ParamClientData();
+        $this->resolveSender();
     }
 
     /** Sets working days
@@ -427,7 +437,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
 
         $address = $this->getReloadedAddressArray($address, $arrCustomKeys);
 
-        $this->initReceiverAndSender();
+
         //
         // Това е само проба да се вземе тъпия "SiteID"
         $siteId = $this->getResolvedSiteFromInputAddressArray($address);
@@ -437,13 +447,13 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         $address = array_merge($this->getAddressModel(), $address);
 
         //
-        // Взимане на града От тъпотията на Спиди [Бекъп ако няма $siteId]
+        // Взимане на града  [Бекъп ако няма $siteId]
         $speedyCty = $this->getCities($address['city'], $address['zip'])[0];
         // dump($speedyCty);
 
         $this->setWorkingDays($speedyCty['days']);
         //
-        // Взимане на улицата от тъпотията на Спиди ....
+        // Взимане на улицата
         $speedyStr = $this->getStreets($address['str_nm'], $speedyCty['id'])[0]; // ->listSitesEx
 
         //
@@ -460,6 +470,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      */
     protected function setSpeedyParamAddresses($siteId, $speedyCty, $speedyStr, $address)
     {
+
         $this->_address = new \ParamAddress();
 
         // Разобличаване на дестинацията
@@ -545,27 +556,29 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         $size->setHeight($height);
         $size->setWidth($width);
         $this->_picking->setSize($size);
-        // (0=sender, 1=receiver or 2=third party)
-        $this->_picking->setPayerType(1);
     }
 
     /**
-     * TODO Да се направи валидни дни за взимане на пратката при положени че има празници
      * @param $serviceTypeId
      * @return bool
      */
     protected function getAllowedDays($serviceTypeId)
     {
-//        $arrTakingDates = $this->eps->getAllowedDaysForTaking(
-//            $serviceTypeId, $this->_sender->getAddress()->getSiteId(), null, time()
-//        );
+        $arrTakingDates = $this->eps->getAllowedDaysForTaking(
+            $serviceTypeId, $this->_client->getAddress()->getSiteId(), null, $this->getTomorrowStamp()
+        );
 
-//        if (count($arrTakingDates) == 0) {
-//            $this->setErrorTrue();
-//            return false;
-//        } else {
-//            return $arrTakingDates[0];
-//        }
+        if (count($arrTakingDates) == 0) {
+            $this->setErrorTrue();
+            return false;
+        } else {
+            return $arrTakingDates[0];
+        }
+    }
+
+    public function getClient()
+    {
+        return $this->_client;
     }
 
     /**
@@ -573,42 +586,91 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      */
     protected function resolveSender()
     {
+        $this->_client = $this->eps->getClientById($this->conApi->getClient()->getClientId());
+        $this->copySender($this->_client);
+    }
+
+    /**
+     * What the f* ... ????
+     * @param \ResultClientData $clent
+     */
+    public function copySender($clent)
+    {
         $this->_sender = new \ParamClientData();
         $this->_sender->setClientId($this->conApi->getClient()->getClientId());
-//        $address = new \ParamAddress();
-//        $address->setSiteId($this->getSpeedySiteId('пловдив', 4000));
-//        $address->setStreetName('Ангел Букурещлиев');
-//        $address->setStreetType('ул');
-//        $address->setStreetNo('9');
+
+//        $address = $this->copyAddress($clent);
 //        $this->_sender->setAddress($address);
+        $this->_sender->setContactName($clent->getContactName());
+//
+        $phones = new \ParamPhoneNumber();
+        foreach ((array)$clent->getPhones() as $phone):
+            $phones->setNumber($phone);
+        endforeach;
+        $this->_sender->setPhones($phones);
     }
+
+    /**
+     * @param $clent
+     * @return \ParamAddress
+     */
+    protected function copyAddress($clent)
+    {
+        $address = new \ParamAddress();
+        $address->setSiteId($clent->getAddress()->getSiteId());
+        $address->setSiteName($clent->getAddress()->getSiteName());
+        $address->setPostCode($clent->getAddress()->getPostCode());
+        $address->setStreetId($clent->getAddress()->getStreetId());
+        $address->setStreetName($clent->getAddress()->getStreetName());
+        $address->setStreetNo($clent->getAddress()->getStreetNo());
+        $address->setCountryId($clent->getAddress()->getCountryId());
+        $address->setFloorNo($clent->getAddress()->getFloorNo());
+        return $address;
+    }
+
+    /** Sets payer type (0=sender, 1=receiver or 2=third party)
+     * @param $intType
+     */
+    public function setPayerType($intType)
+    {
+        $this->payer_type = $intType;
+    }
+
+    /** Return payer type
+     * @return int
+     */
+    public function getPayerType()
+    {
+        return (int)$this->payer_type;
+    }
+
 
     /**
      * This function must be executed as final step
      */
-    public function setResolvedData()
+    public function resolvePicking()
     {
-        $this->resolveSender();
+        // (0=sender, 1=receiver or 2=third party)
+        $this->_picking->setPayerType($this->getPayerType());
         /* @var \ResultCourierService $listServices */
-        $listServices = $this->eps->listServices(time())[0];
+        $listServices = $this->eps->listServices($this->getTomorrowStamp())[0];
         // dump($listServices);
         $this->_picking->setClientSystemId(1310221100); //OpenCart
         $this->_picking->setRef1(010101);
         $this->_picking->setSender($this->_sender);
+
         $this->_picking->setReceiver($this->_receiver);
         $this->_picking->setServiceTypeId($listServices->getTypeId());
+        //
+        // Sets first avalable date
+        $this->_picking->setTakingDate($this->getAllowedDays($listServices->getTypeId()));
 
-        //
-        //
-//        $dataTracking = $this->getAllowedDays($listServices->getTypeId());
-        $this->_picking->setTakingDate($this->getTomorrowStamp());
     }
-
 
     /**
      * @return \date
      */
-    protected function getTomorrowStamp()
+    protected function getTomorrowStamp($dateTrack = null)
     {
         return mktime(0, 0, 0, date('n'), date('j') + 1);
     }
@@ -642,6 +704,7 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
         } else {
             $this->_picking->setAmountCodBase(0);
         }
+
     }
 
     /** Gets calculation total of shipping
@@ -650,31 +713,25 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      */
     public function getCalculation($total = 0)
     {
-        // dump($this->package_count < 1 || $this->_error);
 
-        //
-        // Todo Save result into session and pass it to billing
-        if ($this->package_count < 1 || $this->_error) {
-            return -1;
+        $this->resolvePicking();
+        if ($this->package_count < 1) {
+            $this->error = "No packages in the cart! ";
         }
-
-        //
-        // Prepare final data
         $this->setShippingPackTotal($total);
-        $this->setResolvedData();
 
-        //
-        // Make calculation
+        $result = null;
         try {
-            // Uncomment for shipping price only
-            // return $result->getAmounts()->getTotal();
-            return $this->getReformatedResult($this->eps->calculatePicking($this->_picking));
+            //
+            // Make calculation
+            $result = $this->eps->calculatePicking($this->_picking);
         } catch (\Exception $e) {
             //
             // Record message in error string
             $this->error = $e->getMessage();
-            return -1;
         }
+
+        return $this->getResponse($result);
     }
 
     /** Remove unwanted prefix key
@@ -682,14 +739,23 @@ class ShippingWrapperHelper implements ShippingWrapperInterface
      * @param ResultAmounts $container
      * @return array
      */
-    protected function getReformatedResult(\ResultCalculation $container)
+    protected function getResponse($container)
     {
+        if (!$container instanceof \ResultCalculation) {
+            return array(
+                'error' => $this->error,
+                'total' => 0,
+            );
+        }
+
         $amount = $container->getAmounts();
         return array(
+
             'net_cost' => $amount->getNet(),
             'vat_cost' => $amount->getVat(),
             'insurance' => $amount->getInsuranceBase(),
             'total' => $amount->getTotal(),
+            'error' => '',
             'tracing_date' => $container->getTakingDate(), // 2016-01-16T00:00:00+02:00
             'shipping_end' => $container->getDeadlineDelivery() // 2016-01-18T19:00:00+02:00
         );

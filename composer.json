@@ -1,6 +1,6 @@
 {
   "name": "fire1/speedy",
-  "description": "Speedy wrapper class",
+  "description": "Speedy Courier EPS wrapper library",
   "type": "library",
   "keywords": [
     "silex",
